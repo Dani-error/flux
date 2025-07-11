@@ -19,4 +19,4 @@ package dev.dani.flux
 class FluxException(
     message: String? = null,
     cause: Throwable? = null
-) : RuntimeException(message, cause)
+) : RuntimeException("[Flux] $message", cause)

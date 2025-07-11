@@ -55,3 +55,12 @@ data class ListenerData(
     val ignoreCancelled: Boolean,
     val lambda: Listener?
 )
+
+/**
+ * Handle for a lambda listener registered on the [EventBus].
+ *
+ * Used to unregister lambda listeners when needed.
+ *
+ * @property data the internal listener data associated with this handle.
+ */
+data class ListenerHandle(val data: ListenerData)

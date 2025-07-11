@@ -11,6 +11,9 @@ import kotlin.test.Test
  * Project: flux
  * Created at: 11/7/25 12:26
  * Created by: Dani-error
+ *
+ * Unit tests for [EventBus] verifying registration, priority, cancellation,
+ * and behaviour of lambda-based event listeners.
  */
 class KotlinEventBusTest {
 
@@ -52,11 +55,12 @@ class KotlinEventBusTest {
         var called = false
 
 
-        bus.register<CancellableTestEvent>(ignoreCancelled = false)
+        val listener = bus.register<CancellableTestEvent>(ignoreCancelled = false)
             { called = true }
 
         val event = CancellableTestEvent().apply { isCancelled = true }
         bus.post(event)
+        bus.unregister(listener)
 
         called shouldBe false
     }

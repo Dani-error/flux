@@ -70,12 +70,13 @@ class EventBus {
      * @param priority controls the order in which listeners are called (higher = earlier).
      * @param ignoreCancelled if true, the listener will receive events even if they are cancelled.
      * @param listener the lambda function to invoke when an event of type [T] is posted.
+     * @return a [ListenerHandle] that can be used to unregister this listener later.
      */
     inline fun <reified T : Event> register(
         priority: Int = 0,
         ignoreCancelled: Boolean = false,
         noinline listener: (T) -> Unit,
-    ) {
+    ): ListenerHandle {
         val data = ListenerData(
             method = null,
             instance = null,
@@ -85,6 +86,7 @@ class EventBus {
         )
 
         listeners.computeIfAbsent(T::class.java) { mutableListOf() }.add(data)
+        return ListenerHandle(data)
     }
 
     /**
@@ -99,6 +101,17 @@ class EventBus {
     }
 
     /**
+     * Unregisters a previously registered lambda listener via its [ListenerHandle].
+     *
+     * @param handle the handle returned when registering the lambda listener.
+     */
+    fun unregister(handle: ListenerHandle) {
+        listeners.values.forEach { list ->
+            list.removeIf { it == handle.data }
+        }
+    }
+
+    /**
      * Posts an event to all registered listeners.
      *
      * Listeners are called in descending order of priority. If the event is a [CancellableEvent]
@@ -106,19 +119,24 @@ class EventBus {
      *
      * @param event the event to post.
      * @return the same event instance, possibly modified or cancelled by listeners.
+     * @throws FluxException if you couldn't invoke an event listener
      */
     fun < T : Event > post(event: T): T {
         listeners[event.javaClass]?.sortedByDescending { it.priority }?.forEach { data ->
             if (event is CancellableEvent && event.isCancelled && !data.ignoreCancelled) return@forEach
 
-            if (data.lambda != null) {
-                data.lambda.invoke(event)
-            } else if (data.method != null) {
-                val wasAccessible = data.method.canAccess(data.instance)
+            try {
+                if (data.lambda != null) {
+                    data.lambda.invoke(event)
+                } else if (data.method != null) {
+                    val wasAccessible = data.method.canAccess(data.instance)
 
-                data.method.isAccessible = true
-                data.method.invoke(data.instance, event)
-                data.method.isAccessible = wasAccessible
+                    data.method.isAccessible = true
+                    data.method.invoke(data.instance, event)
+                    data.method.isAccessible = wasAccessible
+                }
+            } catch (ex: Throwable) {
+                throw FluxException("Error invoking event listener", ex)
             }
         }
 

@@ -13,6 +13,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * Project: flux
  * Created at: 11/7/25 12:34
  * Created by: Dani-error
+ *
+ * Unit tests for {@link EventBus}, verifying listener registration,
+ * unregistration, priority ordering, and cancellation behaviour.
  */
 public class JavaEventBusTest {
 
