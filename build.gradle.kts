@@ -18,6 +18,7 @@ dependencies {
     // JUnit Jupiter engine (for both Java & Kotlin)
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("io.kotest:kotest-assertions-core:5.9.1")
 }
 
 tasks.test {

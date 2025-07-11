@@ -41,9 +41,9 @@ class EventBus {
     }
 
     inline fun <reified T : Event> register(
-        noinline listener: (T) -> Unit,
         priority: Int = 0,
-        ignoreCancelled: Boolean = false
+        ignoreCancelled: Boolean = false,
+        noinline listener: (T) -> Unit,
     ) {
         val data = ListenerData(
             method = null,
