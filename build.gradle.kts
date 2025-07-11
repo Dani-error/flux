@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.1.21"
+    id("org.jetbrains.dokka") version "2.0.0"
     java
 }
 
@@ -27,4 +28,14 @@ tasks.test {
 
 kotlin {
     jvmToolchain(21)
+}
+
+dokka {
+    dokkaPublications.html {
+        outputDirectory.set(layout.buildDirectory.dir("documentation"))
+    }
+}
+
+tasks.build {
+    dependsOn(tasks.dokkaGenerate)
 }
