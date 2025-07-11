@@ -3,9 +3,13 @@ package dev.dani.flux.test;
 import dev.dani.flux.CancellableEvent;
 import dev.dani.flux.Event;
 import dev.dani.flux.EventBus;
+import dev.dani.flux.ListenerHandle;
 import dev.dani.flux.Subscribe;
+import kotlin.Unit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -15,7 +19,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * Created by: Dani-error
  *
  * Unit tests for {@link EventBus}, verifying listener registration,
- * unregistration, priority ordering, and cancellation behaviour.
+ * unregistration, priority ordering, cancellation behaviour,
+ * and Java-compatible lambda registration.
  */
 public class JavaEventBusTest {
 
@@ -34,7 +39,6 @@ public class JavaEventBusTest {
         public void setCancelled(boolean cancelled) {
             this.cancelled = cancelled;
         }
-
     }
 
     private static class JavaListener {
@@ -85,17 +89,13 @@ public class JavaEventBusTest {
         StringBuilder builder = new StringBuilder();
 
         Object high = new Object() {
-
             @Subscribe(priority = 100)
             public void on(TestEvent event) { builder.append("H"); }
-
         };
 
         Object low = new Object() {
-
             @Subscribe(priority = 1)
             public void on(TestEvent event) { builder.append("L"); }
-
         };
 
         bus.register(high);
@@ -118,4 +118,21 @@ public class JavaEventBusTest {
         assertTrue(listener.cancelledSeen);
     }
 
+    @Test
+    void testLambdaRegistrationAndUnregister() {
+        AtomicBoolean called = new AtomicBoolean(false);
+
+        ListenerHandle handle = bus.register(TestEvent.class, event -> {
+            called.set(true);
+        });
+
+        bus.post(new TestEvent());
+        assertTrue(called.get());
+
+        // Reset and unregister
+        called.set(false);
+        bus.unregister(handle);
+        bus.post(new TestEvent());
+        assertFalse(called.get());
+    }
 }

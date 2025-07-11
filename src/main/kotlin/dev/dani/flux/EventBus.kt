@@ -1,6 +1,7 @@
 package dev.dani.flux
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.function.Consumer
 
 
 /*
@@ -86,6 +87,37 @@ class EventBus {
         )
 
         listeners.computeIfAbsent(T::class.java) { mutableListOf() }.add(data)
+        return ListenerHandle(data)
+    }
+
+    /**
+     * Registers a lambda listener for the given [eventClass], intended for Java usage.
+     *
+     * This overload uses [@JvmOverloads] to allow Java to omit `priority` and `ignoreCancelled`.
+     *
+     * @param T the event type to listen to.
+     * @param eventClass the Java [Class] of the event.
+     * @param priority controls the order in which listeners are called (higher = earlier).
+     * @param ignoreCancelled if true, the listener will still receive cancelled events.
+     * @param listener the lambda function to invoke when an event of type [T] is posted.
+     * @return a [ListenerHandle] that can be used to unregister this listener later.
+     */
+    @JvmOverloads
+    fun <T : Event> register(
+        eventClass: Class<T>,
+        priority: Int = 0,
+        ignoreCancelled: Boolean = false,
+        listener: Consumer<T>
+    ): ListenerHandle {
+        val data = ListenerData(
+            method = null,
+            instance = null,
+            priority = priority,
+            ignoreCancelled = ignoreCancelled,
+            lambda = { event -> listener.accept(eventClass.cast(event)) }
+        )
+
+        listeners.computeIfAbsent(eventClass) { mutableListOf() }.add(data)
         return ListenerHandle(data)
     }
 
