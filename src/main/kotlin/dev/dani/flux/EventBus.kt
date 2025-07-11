@@ -66,8 +66,15 @@ class EventBus {
         listeners[event.javaClass]?.sortedByDescending { it.priority }?.forEach { data ->
             if (event is CancellableEvent && event.isCancelled && !data.ignoreCancelled) return@forEach
 
-            data.lambda?.invoke(event)
-                ?: data.method?.invoke(data.instance, event)
+            if (data.lambda != null) {
+                data.lambda.invoke(event)
+            } else if (data.method != null) {
+                val wasAccessible = data.method.canAccess(data.instance)
+
+                data.method.isAccessible = true
+                data.method.invoke(data.instance, event)
+                data.method.isAccessible = wasAccessible
+            }
         }
 
         return event
