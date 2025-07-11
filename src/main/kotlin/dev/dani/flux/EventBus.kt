@@ -10,10 +10,34 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class EventBus {
 
-    private val listeners = ConcurrentHashMap<Class<out Event>, MutableList<ListenerData>>()
+    val listeners = ConcurrentHashMap<Class<out Event>, MutableList<ListenerData>>()
 
+    @Suppress("UNCHECKED_CAST")
     fun register(listener: Any) {
+        listener.javaClass.declaredMethods
+            .filter { it.isAnnotationPresent(Subscribe::class.java) }
+            .forEach { method ->
+                val annotation = method.getAnnotation(Subscribe::class.java)
+                val paramType = method.parameters.firstOrNull()?.type
+                    ?: throw FluxException("Listener method must have exactly one parameter representing the event type")
 
+                // Add runtime check for safety
+                if (!Event::class.java.isAssignableFrom(paramType)) {
+                    throw FluxException("Listener method parameter must be a subclass of Event: found $paramType")
+                }
+
+                val eventType = paramType as Class<out Event>
+
+                val data = ListenerData(
+                    method,
+                    listener,
+                    annotation.priority,
+                    annotation.ignoreCancelled,
+                    null
+                )
+
+                listeners.computeIfAbsent(eventType) { mutableListOf() }.add(data)
+            }
     }
 
     inline fun <reified T : Event> register(
@@ -21,7 +45,15 @@ class EventBus {
         priority: Int = 0,
         ignoreCancelled: Boolean = false
     ) {
+        val data = ListenerData(
+            method = null,
+            instance = null,
+            priority = priority,
+            ignoreCancelled = ignoreCancelled,
+            lambda = { event -> listener(event as T) }
+        )
 
+        listeners.computeIfAbsent(T::class.java) { mutableListOf() }.add(data)
     }
 
     fun unregister(listener: Any) {
