@@ -6,7 +6,7 @@ plugins {
     kotlin("jvm") version "2.2.0"
     id("org.jetbrains.dokka") version "2.0.0"
     java
-    id("com.vanniktech.maven.publish") version "0.33.0"
+    id("com.vanniktech.maven.publish") version "0.34.0"
 }
 
 defaultTasks("clean", "build")
